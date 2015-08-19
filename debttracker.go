@@ -1,15 +1,20 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/gorilla/mux"
 	"html/template"
+	"io"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 var (
 	templates = template.Must(template.ParseFiles("templates/index.html"))
 	debtStore []DebtItem
+	debtFile  = "debt.csv"
 )
 
 type DebtItem struct {
@@ -50,6 +55,57 @@ type DebtData struct {
 	DebtStore  []DebtItem
 }
 
+func LoadDebtData(filename string) ([]DebtItem, error) {
+	csvfile, err := os.Open(filename)
+	output := []DebtItem{}
+	if err != nil {
+		return output, err
+	}
+	defer csvfile.Close()
+	reader := csv.NewReader(csvfile)
+	reader.FieldsPerRecord = 3
+	for {
+		entry, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, err
+		}
+		cents, err := strconv.Atoi(entry[1])
+		if err != nil {
+			return output, err
+		}
+		output = append(output, DebtItem{entry[0], Money{cents}, entry[2]})
+	}
+	return output, nil
+}
+
+func SaveDebtData(l []DebtItem, filename string) error {
+	csvfile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0660)
+	if err != nil {
+		if _, err := os.Stat(filename); err != nil {
+			csvfile, _ = os.Create(filename)
+		} else {
+			fmt.Printf("Error opening debt file: %v", err)
+			panic(err)
+		}
+	}
+	defer csvfile.Close()
+	writer := csv.NewWriter(csvfile)
+	for _, item := range l {
+		err = writer.Write([]string{item.Person, fmt.Sprintf("%d", item.Amount.Cents), item.Note})
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	err = writer.Error()
+	if err != nil {
+		fmt.Println(err)
+	}
+	writer.Flush()
+	return nil
+}
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
 	ower, amount := CalculateOwed(debtStore)
 	data := DebtData{ower, amount, debtStore}
@@ -85,11 +141,18 @@ func HandleAddDebt(w http.ResponseWriter, r *http.Request) {
 
 	debtStore = append(debtStore, DebtItem{Person: person, Amount: moneyAmount, Note: ""})
 
+	SaveDebtData(debtStore, debtFile)
 	http.Redirect(w, r, "/", 301)
 }
 
 func init() {
-	debtStore = make([]DebtItem, 0)
+	data, err := LoadDebtData(debtFile)
+	if err != nil {
+		fmt.Println(err)
+		debtStore = make([]DebtItem, 0)
+	} else {
+		debtStore = data
+	}
 }
 
 func main() {
