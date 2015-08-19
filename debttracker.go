@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/mux"
 	"html/template"
 	"net/http"
-	"strconv"
 )
 
 var (
@@ -20,7 +19,17 @@ type DebtItem struct {
 }
 
 type Money struct {
-	Cents int64
+	Cents int
+}
+
+func NewMoney(v string) (Money, error) {
+	dollars := 0
+	cents := 0
+	_, err := fmt.Sscanf(v, "%d.%02d", &dollars, &cents)
+	if err != nil {
+		return Money{0}, err
+	}
+	return Money{Cents: dollars*100 + cents}, nil
 }
 
 func (v Money) Add(lhs Money) Money {
@@ -37,7 +46,8 @@ type DebtData struct {
 }
 
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
-	data := DebtData{"Ben", Money{14}, debtStore}
+	money, _ := NewMoney("14.50")
+	data := DebtData{"Ben", money, debtStore}
 	err := templates.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -46,8 +56,7 @@ func BaseHandler(w http.ResponseWriter, r *http.Request) {
 
 func HandleAddDebt(w http.ResponseWriter, r *http.Request) {
 	person := r.FormValue("person")
-	amount, _ := strconv.ParseInt(r.FormValue("amount"), 10, 64)
-	moneyAmount := Money{amount}
+	moneyAmount, _ := NewMoney(r.FormValue("amount"))
 
 	debtStore = append(debtStore, DebtItem{Person: person, Amount: moneyAmount, Note: ""})
 
