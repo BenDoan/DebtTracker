@@ -9,13 +9,24 @@ import (
 
 var templates = template.Must(template.ParseFiles("templates/index.html"))
 
+type Money struct {
+	Cents int64
+}
+
+func (v Money) Add(lhs Money) Money {
+	return Money{Cents: v.Cents + lhs.Cents}
+}
+func (v Money) String() string {
+	return fmt.Sprintf("$%d.%02d", v.Cents/100, v.Cents%100)
+}
+
 type DebtData struct {
 	Ower       string
-	OwedAmount float64
+	OwedAmount Money
 }
 
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
-	data := DebtData{"Ben", 14.5}
+	data := DebtData{"Ben", Money{1450}}
 	err := templates.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

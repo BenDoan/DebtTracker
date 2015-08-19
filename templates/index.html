@@ -10,6 +10,6 @@
         <!--<link rel="stylesheet" href="css/main.css">-->
     </head>
     <body>
-        <h2>{{printf "%s" .Ower}} owes ${{printf "%f" .OwedAmount}}</h2>
+        <h2>{{printf "%s" .Ower}} owes {{printf "%v" .OwedAmount}}</h2>
     </body>
 </html>
