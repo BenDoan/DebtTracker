@@ -11,5 +11,25 @@
     </head>
     <body>
         <h2>{{printf "%s" .Ower}} owes {{printf "%v" .OwedAmount}}</h2>
+
+        <form action="/" method="POST">
+            <label for="person">Add debt for</label>
+            <select name="person">
+                <option value="ben">Ben</option>
+                <option value="mitchell">Mitchell</option>
+            </select>
+
+            <label for="amount">Amount</label>
+            <input type="text" name="amount">
+            <input type="submit" value="Submit">
+        </form>
+
+        <h3>Debts</h3>
+        <ul>
+            {{ range $debitem := .DebtStore }}
+                <li>{{ $debitem }}</li>
+            {{ end }}
+
+        </ul>
     </body>
 </html>
