@@ -35,6 +35,11 @@ func NewMoney(v string) (Money, error) {
 func (v Money) Add(lhs Money) Money {
 	return Money{Cents: v.Cents + lhs.Cents}
 }
+
+func (v Money) Subtract(lhs Money) Money {
+	return Money{Cents: v.Cents - lhs.Cents}
+}
+
 func (v Money) String() string {
 	return fmt.Sprintf("$%d.%02d", v.Cents/100, v.Cents%100)
 }
@@ -46,11 +51,31 @@ type DebtData struct {
 }
 
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
-	money, _ := NewMoney("14.50")
-	data := DebtData{"Ben", money, debtStore}
+	ower, amount := CalculateOwed(debtStore)
+	data := DebtData{ower, amount, debtStore}
+
 	err := templates.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func CalculateOwed(debtStore []DebtItem) (ower string, amount Money) {
+	aAmount := Money{0}
+	bAmount := Money{0}
+
+	for _, item := range debtStore {
+		if item.Person == "ben" {
+			aAmount = aAmount.Add(item.Amount)
+		} else if item.Person == "mitchell" {
+			bAmount = bAmount.Add(item.Amount)
+		}
+	}
+
+	if aAmount.Cents > bAmount.Cents {
+		return "Ben", aAmount.Subtract(bAmount)
+	} else {
+		return "Mitchell", bAmount.Subtract(aAmount)
 	}
 }
 
