@@ -29,11 +29,22 @@
         </form>
 
         <h3>Debts</h3>
-        <ul>
+        <table cellpadding="5">
+            <tr>
+                <th align="left">Person</th>
+                <th align="left">Amount</th>
+                <th align="left">Date</th>
+                <th align="left">Note</th>
+            </tr>
             {{ range $debitem := .DebtStore }}
-                <li>{{ $debitem }}</li>
+                <tr>
+                    <td>{{ $debitem.Person }}</td>
+                    <td>{{ $debitem.Amount }}</td>
+                    <td>{{ $debitem.Creation }}</td>
+                    <td>{{ $debitem.Note }}</td>
+                </tr>
             {{ end }}
 
-        </ul>
+        </table>
     </body>
 </html>

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
@@ -18,9 +19,10 @@ var (
 )
 
 type DebtItem struct {
-	Person string
-	Amount Money
-	Note   string
+	Person   string
+	Amount   Money
+	Note     string
+	Creation time.Time
 }
 
 type Money struct {
@@ -63,7 +65,7 @@ func LoadDebtData(filename string) ([]DebtItem, error) {
 	}
 	defer csvfile.Close()
 	reader := csv.NewReader(csvfile)
-	reader.FieldsPerRecord = 3
+	reader.FieldsPerRecord = -1
 	for {
 		entry, err := reader.Read()
 		if err == io.EOF {
@@ -76,7 +78,13 @@ func LoadDebtData(filename string) ([]DebtItem, error) {
 		if err != nil {
 			return output, err
 		}
-		output = append(output, DebtItem{entry[0], Money{cents}, entry[2]})
+
+		t, err := strconv.ParseInt(entry[3], 10, 64)
+		if err != nil {
+			return output, err
+		}
+
+		output = append(output, DebtItem{entry[0], Money{cents}, entry[2], time.Unix(int64(t), 0)})
 	}
 	return output, nil
 }
@@ -94,7 +102,10 @@ func SaveDebtData(l []DebtItem, filename string) error {
 	defer csvfile.Close()
 	writer := csv.NewWriter(csvfile)
 	for _, item := range l {
-		err = writer.Write([]string{item.Person, fmt.Sprintf("%d", item.Amount.Cents), item.Note})
+		err = writer.Write([]string{item.Person,
+			fmt.Sprintf("%d", item.Amount.Cents),
+			item.Note,
+			strconv.Itoa(int(item.Creation.Unix()))})
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -140,7 +151,7 @@ func HandleAddDebt(w http.ResponseWriter, r *http.Request) {
 	notes := r.FormValue("notes")
 	moneyAmount, _ := NewMoney(r.FormValue("amount"))
 
-	debtStore = append(debtStore, DebtItem{Person: person, Amount: moneyAmount, Note: notes})
+	debtStore = append(debtStore, DebtItem{Person: person, Amount: moneyAmount, Note: notes, Creation: time.Now()})
 
 	SaveDebtData(debtStore, debtFile)
 	http.Redirect(w, r, "/", 301)
