@@ -137,9 +137,10 @@ func CalculateOwed(debtStore []DebtItem) (ower string, amount Money) {
 
 func HandleAddDebt(w http.ResponseWriter, r *http.Request) {
 	person := r.FormValue("person")
+	notes := r.FormValue("notes")
 	moneyAmount, _ := NewMoney(r.FormValue("amount"))
 
-	debtStore = append(debtStore, DebtItem{Person: person, Amount: moneyAmount, Note: ""})
+	debtStore = append(debtStore, DebtItem{Person: person, Amount: moneyAmount, Note: notes})
 
 	SaveDebtData(debtStore, debtFile)
 	http.Redirect(w, r, "/", 301)
