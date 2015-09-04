@@ -10,13 +10,24 @@
         <!--<link rel="stylesheet" href="css/main.css">-->
     </head>
     <body>
-        <h2>{{printf "%s" .Ower}} owes {{printf "%v" .OwedAmount}}</h2>
+        <ul>
+            {{ range $user := .Users }}
+                <li>{{ $user }} : {{ $user.Balance }}</li>
+            {{ end }}
+        </ul>
 
         <form action="/" method="POST">
-            <label for="person">Add debt for</label>
-            <select name="person">
-                <option value="ben">Ben</option>
-                <option value="mitchell">Mitchell</option>
+            <label for="debtor">Debtor</label>
+            <select name="debtor">
+                {{ range $user := .Users }}
+                    <option value="{{$user.Name}}">{{$user.Name}}</option>
+                {{end}}
+            </select>
+            <label for="creditor">Creditor</label>
+            <select name="creditor">
+                {{ range $user := .Users }}
+                    <option value="{{$user.Name}}">{{$user.Name}}</option>
+                {{end}}
             </select>
 
             <label for="amount">Amount</label>
@@ -32,14 +43,16 @@
         <h3>Debts</h3>
         <table cellpadding="5">
             <tr>
-                <th align="left">Person</th>
+                <th align="left">Debtor</th>
+                <th align="left">Creditor</th>
                 <th align="left">Amount</th>
                 <th align="left">Date</th>
                 <th align="left">Note</th>
             </tr>
             {{ range $debitem := .DebtStore }}
                 <tr>
-                    <td>{{ $debitem.Person }}</td>
+                    <td>{{ $debitem.Debtor }}</td>
+                    <td>{{ $debitem.Creditor }}</td>
                     <td>{{ $debitem.Amount }}</td>
                     <td>{{ $debitem.Creation }}</td>
                     <td>{{ $debitem.Note }}</td>
